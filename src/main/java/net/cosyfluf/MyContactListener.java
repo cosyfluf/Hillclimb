@@ -8,7 +8,7 @@ import org.jbox2d.callbacks.ContactImpulse;
 
 public class MyContactListener implements ContactListener {
 
-    private GamePanel gamePanel; // Referenz zurück zu GamePanel, um über Kollisionen zu informieren
+    private GamePanel gamePanel;
 
     public MyContactListener(GamePanel gamePanel) {
         this.gamePanel = gamePanel;
@@ -22,7 +22,6 @@ public class MyContactListener implements ContactListener {
         Object userDataA = fixtureA.getUserData();
         Object userDataB = fixtureB.getUserData();
 
-        // Prüfen, ob das Auto mit einem Collectible kollidiert ist
         if (userDataA instanceof Car && userDataB instanceof Collectible) {
             gamePanel.handleCollectibleCollision((Car)userDataA, (Collectible)userDataB);
         } else if (userDataB instanceof Car && userDataA instanceof Collectible) {
@@ -32,24 +31,24 @@ public class MyContactListener implements ContactListener {
 
     @Override
     public void endContact(Contact contact) {
-        // Nicht verwendet für Collectibles
+
     }
 
     @Override
     public void preSolve(Contact contact, Manifold oldManifold) {
-        // Collectibles sollen keine physische Kollisionsantwort haben, nur als Sensor wirken
+
         Fixture fixtureA = contact.getFixtureA();
         Fixture fixtureB = contact.getFixtureB();
 
         boolean isCollectible = (fixtureA.getUserData() instanceof Collectible || fixtureB.getUserData() instanceof Collectible);
 
         if (isCollectible) {
-            contact.setEnabled(false); // Deaktiviert die physikalische Reaktion
+            contact.setEnabled(false);
         }
     }
 
     @Override
     public void postSolve(Contact contact, ContactImpulse impulse) {
-        // Nicht verwendet
+
     }
 }

@@ -8,29 +8,26 @@ import java.util.List;
 
 public class MainMenuPanel extends JPanel {
 
-    private MainFrame mainFrame; // Referenz zum Hauptframe
-    private List<LevelInfo> levels; // Liste der verfügbaren Level
+    private MainFrame mainFrame;
+    private List<LevelInfo> levels;
 
     public MainMenuPanel(MainFrame mainFrame, List<LevelInfo> levels) {
         this.mainFrame = mainFrame;
         this.levels = levels;
 
-        setLayout(new BorderLayout()); // Layout für das Menü
-        setBackground(new Color(100, 149, 237)); // CornflowerBlue
+        setLayout(new BorderLayout());
+        setBackground(new Color(100, 149, 237));
 
-        // Titel des Spiels
         JLabel titleLabel = new JLabel("Hill Climb Game", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 48));
         titleLabel.setForeground(Color.WHITE);
         add(titleLabel, BorderLayout.NORTH);
 
-        // Panel für die Level-Buttons
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(levels.size() + 1, 1, 10, 10)); // Grid für Buttons
-        buttonPanel.setOpaque(false); // Macht den Hintergrund transparent
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(50, 200, 50, 200)); // Polsterung
+        buttonPanel.setLayout(new GridLayout(levels.size() + 1, 1, 10, 10));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(50, 200, 50, 200));
 
-        // Erstelle Buttons für jedes Level
         for (int i = 0; i < levels.size(); i++) {
             final int levelIndex = i;
             JButton levelButton = new JButton("Level " + (i + 1) + ": " + levels.get(i).name);
@@ -38,19 +35,18 @@ public class MainMenuPanel extends JPanel {
             levelButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    mainFrame.startGame(levelIndex); // Startet das ausgewählte Level
+                    mainFrame.startGame(levelIndex);
                 }
             });
             buttonPanel.add(levelButton);
         }
 
-        // Exit Button
         JButton exitButton = new JButton("Exit Game");
         styleButton(exitButton);
         exitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.exit(0); // Beendet die Anwendung
+                System.exit(0);
             }
         });
         buttonPanel.add(exitButton);
@@ -58,16 +54,14 @@ public class MainMenuPanel extends JPanel {
         add(buttonPanel, BorderLayout.CENTER);
     }
 
-    // Hilfsmethode zum Stylen der Buttons
     private void styleButton(JButton button) {
         button.setFont(new Font("Arial", Font.BOLD, 24));
-        button.setBackground(new Color(60, 179, 113)); // MediumSeaGreen
+        button.setBackground(new Color(60, 179, 113));
         button.setForeground(Color.WHITE);
-        button.setFocusPainted(false); // Keine Fokusumrandung
-        button.setBorder(BorderFactory.createRaisedBevelBorder()); // Erhobener Rand
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createRaisedBevelBorder());
     }
 
-    // Zeichnet den Hintergrund mit Farbverlauf
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
