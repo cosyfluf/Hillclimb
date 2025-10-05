@@ -11,7 +11,6 @@ import org.jbox2d.dynamics.World;
 import org.jbox2d.dynamics.joints.WheelJoint;
 import org.jbox2d.dynamics.joints.WheelJointDef;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
@@ -20,12 +19,8 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 
 import static net.cosyfluf.PhysicsConstants.PIXELS_PER_METER;
-import static net.cosyfluf.PhysicsConstants.NITRO_FORCE_MULTIPLIER;
-import static net.cosyfluf.PhysicsConstants.NITRO_CONSUMPTION_RATE;
-import static net.cosyfluf.PhysicsConstants.NITRO_MAX_FUEL;
-import static net.cosyfluf.PhysicsConstants.NITRO_COOLDOWN_TIME;
 import static net.cosyfluf.PhysicsConstants.TIME_STEP;
-import static net.cosyfluf.PhysicsConstants.WHEEL_RADIUS; // Import von WHEEL_RADIUS
+import static net.cosyfluf.PhysicsConstants.WHEEL_RADIUS;
 
 public class Car {
     public Body chassisBody;
@@ -35,7 +30,6 @@ public class Car {
     public WheelJoint frontWheelJoint;
     public WheelJoint rearWheelJoint;
 
-    // In Metern (public static final für Spawning-Berechnung in GamePanel)
     public static final float CHASSIS_WIDTH = 2.5f;
     public static final float CHASSIS_HEIGHT = 0.8f;
     public static final float CHASSIS_FRONT_WHEEL_OFFSET_X = CHASSIS_WIDTH * 0.35f;
@@ -62,7 +56,7 @@ public class Car {
     public float nitroCooldownTimer = 0.0f;
 
     public Car(World world, float initialX, float initialY) {
-        // --- Chassis Body ---
+
         BodyDef bd = new BodyDef();
         bd.type = BodyType.DYNAMIC;
         bd.position.set(initialX, initialY);
@@ -80,9 +74,8 @@ public class Car {
         chassisBody = world.createBody(bd);
         chassisBody.createFixture(fd).setUserData(this);
 
-        // --- Rad Body Definition ---
         CircleShape wheelShape = new CircleShape();
-        wheelShape.setRadius(WHEEL_RADIUS); // Verwendet PhysicsConstants.WHEEL_RADIUS
+        wheelShape.setRadius(WHEEL_RADIUS);
 
         FixtureDef wheelFd = new FixtureDef();
         wheelFd.shape = wheelShape;
@@ -90,21 +83,18 @@ public class Car {
         wheelFd.friction = 2.5f;
         wheelFd.restitution = 0.2f;
 
-        // --- Vorderrad ---
         BodyDef wheelBdFront = new BodyDef();
         wheelBdFront.type = BodyType.DYNAMIC;
         wheelBdFront.position.set(initialX + CHASSIS_FRONT_WHEEL_OFFSET_X, initialY - CHASSIS_WHEEL_OFFSET_Y);
         frontWheelBody = world.createBody(wheelBdFront);
         frontWheelBody.createFixture(wheelFd);
 
-        // --- Hinterrad ---
         BodyDef wheelBdRear = new BodyDef();
         wheelBdRear.type = BodyType.DYNAMIC;
         wheelBdRear.position.set(initialX - CHASSIS_REAR_WHEEL_OFFSET_X, initialY - CHASSIS_WHEEL_OFFSET_Y);
         rearWheelBody = world.createBody(wheelBdRear);
         rearWheelBody.createFixture(wheelFd);
 
-        // --- Radgelenke (Aufhängung) ---
         WheelJointDef wjd = new WheelJointDef();
         wjd.initialize(chassisBody, frontWheelBody, frontWheelBody.getPosition(), new Vec2(0.0f, -1.0f));
         wjd.motorSpeed = 0.0f;
@@ -138,7 +128,6 @@ public class Car {
             currentMotorTorque = idleTorque;
         }
 
-        // --- NITRO-LOGIK ---
         if (nitroCooldownTimer > 0) {
             nitroCooldownTimer -= TIME_STEP;
             if (nitroCooldownTimer < 0) nitroCooldownTimer = 0;
@@ -192,7 +181,7 @@ public class Car {
     public float getAngle() { return chassisBody.getAngle(); }
 
     public void draw(Graphics2D g2d, int screenHeight) {
-        g2d.setColor(new Color(178, 34, 34)); // Firebrick (dunkelrot)
+        g2d.setColor(new Color(178, 34, 34));
 
         Vec2 chassisPos = chassisBody.getPosition();
         float chassisAngle = chassisBody.getAngle();
@@ -204,14 +193,12 @@ public class Car {
         g2d.fill(new Rectangle2D.Double(-CHASSIS_WIDTH / 2 * PIXELS_PER_METER, -CHASSIS_HEIGHT / 2 * PIXELS_PER_METER,
                 CHASSIS_WIDTH * PIXELS_PER_METER, CHASSIS_HEIGHT * PIXELS_PER_METER));
 
-        // Kabine/Dach
-        g2d.setColor(new Color(205, 92, 92)); // IndianRed
+        g2d.setColor(new Color(205, 92, 92));
         double cabinWidth = CHASSIS_WIDTH / 2 * PIXELS_PER_METER;
         double cabinHeight = CHASSIS_HEIGHT / 2 * PIXELS_PER_METER;
         g2d.fill(new Rectangle2D.Double(-cabinWidth / 2, -CHASSIS_HEIGHT / 2 * PIXELS_PER_METER - cabinHeight, cabinWidth, cabinHeight));
 
-        // Windschutzscheibe (einfaches Polygon)
-        g2d.setColor(new Color(173, 216, 230, 180)); // Hellblau mit Transparenz
+        g2d.setColor(new Color(173, 216, 230, 180));
         Polygon windshield = new Polygon();
         windshield.addPoint((int) (cabinWidth / 4), (int) (-CHASSIS_HEIGHT / 2 * PIXELS_PER_METER - cabinHeight + 2));
         windshield.addPoint((int) (cabinWidth / 2 - 2), (int) (-CHASSIS_HEIGHT / 2 * PIXELS_PER_METER - cabinHeight + 2));
@@ -219,19 +206,16 @@ public class Car {
         windshield.addPoint((int) (cabinWidth / 4 + 5), (int) (-CHASSIS_HEIGHT / 2 * PIXELS_PER_METER - cabinHeight / 2));
         g2d.fill(windshield);
 
-        // Scheinwerfer
-        g2d.setColor(new Color(255, 255, 0)); // Reines Gelb
+        g2d.setColor(new Color(255, 255, 0));
         g2d.fill(new Ellipse2D.Double(CHASSIS_WIDTH / 2 * PIXELS_PER_METER - 5, -CHASSIS_HEIGHT / 4 * PIXELS_PER_METER, 8, 8));
         g2d.fill(new Ellipse2D.Double(CHASSIS_WIDTH / 2 * PIXELS_PER_METER - 5, CHASSIS_HEIGHT / 4 * PIXELS_PER_METER - 8, 8, 8));
 
         g2d.setTransform(oldTransform);
 
-        // --- Zeichne Räder ---
         g2d.setColor(Color.BLACK);
         drawWheel(g2d, frontWheelBody, screenHeight);
         drawWheel(g2d, rearWheelBody, screenHeight);
 
-        // --- Optional: Nitro-Flammen, wenn Nitro aktiv ---
         if (isNitroActive && currentNitroFuel > 0) {
             g2d.setColor(Color.ORANGE);
             float flameSize = (float) (Math.random() * 10 + 10);
@@ -259,7 +243,6 @@ public class Car {
         g2d.fill(new Ellipse2D.Double(-WHEEL_RADIUS * PIXELS_PER_METER, -WHEEL_RADIUS * PIXELS_PER_METER,
                 WHEEL_RADIUS * 2 * PIXELS_PER_METER, WHEEL_RADIUS * 2 * PIXELS_PER_METER));
 
-        // Radnabe
         g2d.setColor(Color.GRAY);
         float hubRadius = WHEEL_RADIUS * 0.4f;
         g2d.fill(new Ellipse2D.Double(-hubRadius * PIXELS_PER_METER, -hubRadius * PIXELS_PER_METER,

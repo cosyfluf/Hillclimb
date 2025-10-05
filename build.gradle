@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'net.cosyfluf'
+version = '0.1.1'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.jbox2d:jbox2d-library:2.2.1.1'
+}
+
+application {
+    mainClass = 'net.cosyfluf.MainFrame'
+}
+
+tasks.shadowJar {
+    archiveBaseName.set('cosyfluf-game')
+    archiveClassifier.set('')
+    archiveVersion.set(version)
+    manifest {
+        attributes 'Main-Class': application.mainClass.get()
+    }
+}
+
+tasks.build {
+    dependsOn tasks.shadowJar
+}

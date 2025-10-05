@@ -11,8 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent; // NEU: Für Maus-Events
-import java.awt.event.MouseAdapter; // NEU: Für Maus-Events
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseAdapter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -24,16 +24,10 @@ import javax.swing.Timer;
 import static net.cosyfluf.PhysicsConstants.PIXELS_PER_METER;
 import static net.cosyfluf.PhysicsConstants.GRAVITY;
 import static net.cosyfluf.PhysicsConstants.TIME_STEP;
-import static net.cosyfluf.PhysicsConstants.VELOCITY_ITERATIONS;
-import static net.cosyfluf.PhysicsConstants.POSITION_ITERATIONS;
-import static net.cosyfluf.PhysicsConstants.NITRO_RECHARGE_AMOUNT;
-import static net.cosyfluf.PhysicsConstants.METERS_PER_SECOND_TO_KMH_FACTOR;
-import static net.cosyfluf.PhysicsConstants.UPSIDE_DOWN_GAME_OVER_TIME;
 import static net.cosyfluf.PhysicsConstants.WHEEL_RADIUS;
 
 public class GamePanel extends JPanel implements ActionListener {
 
-    // Logische Breite und Höhe der Spielwelt (interne Referenzgröße)
     public static final int LOGICAL_WIDTH = 1200;
     public static final int LOGICAL_HEIGHT = 700;
 
@@ -43,12 +37,11 @@ public class GamePanel extends JPanel implements ActionListener {
     private static final float COLLECTIBLE_SPAWN_INTERVAL_METERS = 15.0f;
     private static final float COLLECTIBLE_MAX_HEIGHT_METERS = 7.0f;
 
-    private MainFrame mainFrame; // Referenz zum Hauptframe für Vollbildwechsel
-    private List<LevelInfo> availableLevels; // Liste der verfügbaren Level
-    private LevelInfo currentLevel; // Informationen zum aktuell gespielten Level
-    private int selectedMenuLevelIndex = 0; // Für die Level-Auswahl im Menü
+    private MainFrame mainFrame;
+    private List<LevelInfo> availableLevels;
+    private LevelInfo currentLevel;
+    private int selectedMenuLevelIndex = 0;
 
-    // --- Spielzustände ---
     public enum GameState {
         MAIN_MENU,
         GAME_RUNNING,
@@ -56,39 +49,37 @@ public class GamePanel extends JPanel implements ActionListener {
     }
     private GameState currentState;
 
-    private World world; // JBox2D Physikwelt
-    private Car car;     // Das Auto-Objekt
-    private Body groundBody; // Der JBox2D-Körper für das Terrain
+    private World world;
+    private Car car;
+    private Body groundBody;
 
-    private double[] terrainPointsPixels; // Terrainpunkte in Pixeln für die Zeichnung
-    private Vec2[] terrainPointsMeters; // Terrainpunkte in Metern für JBox2D
-    private List<Collectible> collectibles; // Liste der Sammelobjekte im Spiel
+    private double[] terrainPointsPixels;
+    private Vec2[] terrainPointsMeters;
+    private List<Collectible> collectibles;
 
-    private Set<Integer> activeKeys = new HashSet<>(); // Set der aktuell gedrückten Tasten
-    private Random random; // Zufallsgenerator für Terrain und Collectibles
+    private Set<Integer> activeKeys = new HashSet<>();
+    private Random random;
 
-    private double cameraOffsetX = 0.0; // Kamera-Offset für das Scrolling
-    private Timer gameTimer; // Der Swing Timer für die Spiel-Schleife
+    private double cameraOffsetX = 0.0;
+    private Timer gameTimer;
 
-    private float upsideDownTimer = 0.0f; // Für Timed Game Over bei Über-Kopf
+    private float upsideDownTimer = 0.0f;
 
-    // --- NEU: Button-Bereiche für Mausinteraktion ---
     private List<Rectangle> menuButtonsBounds;
     private List<Rectangle> gameOverButtonsBounds;
 
-
-    public GamePanel(MainFrame mainFrame, List<LevelInfo> levels) { // Konstruktor angepasst
+    public GamePanel(MainFrame mainFrame, List<LevelInfo> levels) {
         this.mainFrame = mainFrame;
-        this.availableLevels = levels; // Verfügbare Levels vom MainFrame erhalten
+        this.availableLevels = levels;
 
-        setPreferredSize(new Dimension(LOGICAL_WIDTH, LOGICAL_HEIGHT)); // Bevorzugte Größe des Panels
-        setFocusable(true); // Panel muss fokussierbar sein, um Tastatureingaben zu empfangen
+        setPreferredSize(new Dimension(LOGICAL_WIDTH, LOGICAL_HEIGHT));
+        setFocusable(true);
 
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 activeKeys.add(e.getKeyCode());
-                handleInputInState(e.getKeyCode()); // Eingabe je nach Zustand behandeln
+                handleInputInState(e.getKeyCode());
             }
 
             @Override
@@ -97,7 +88,6 @@ public class GamePanel extends JPanel implements ActionListener {
             }
         });
 
-        // --- NEU: Maus-Listener für Menü-Buttons ---
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -111,25 +101,22 @@ public class GamePanel extends JPanel implements ActionListener {
             }
         });
 
-
         gameTimer = new Timer((int)(TIME_STEP * 1000), this);
 
         world = new World(GRAVITY);
         collectibles = new ArrayList<>();
 
         this.currentLevel = availableLevels.get(0);
-        generateTerrain(); // Generiere ein Standard-Terrain für den Menühintergrund
+        generateTerrain();
 
-        // Initialisiere die Button-Bereiche einmalig
         menuButtonsBounds = new ArrayList<>();
         gameOverButtonsBounds = new ArrayList<>();
 
         showMainMenu();
     }
 
-    // --- NEU: Maus-Klick-Behandlung basierend auf dem Spielzustand ---
     private void handleMouseClickInState(int mouseX, int mouseY) {
-        // Skaliere die Mauskoordinaten zurück auf die logische Spielauflösung
+
         double scaleX = (double) LOGICAL_WIDTH / getWidth();
         double scaleY = (double) LOGICAL_HEIGHT / getHeight();
         int logicalMouseX = (int)(mouseX * scaleX);
@@ -139,30 +126,29 @@ public class GamePanel extends JPanel implements ActionListener {
             for (int i = 0; i < menuButtonsBounds.size(); i++) {
                 if (menuButtonsBounds.get(i).contains(logicalMouseX, logicalMouseY)) {
                     if (i < availableLevels.size()) {
-                        startGame(i); // Level starten
-                    } else { // Letzter Button ist "Exit"
+                        startGame(i);
+                    } else {
                         System.exit(0);
                     }
-                    return; // Event verarbeitet
+                    return;
                 }
             }
         } else if (currentState == GameState.GAME_OVER) {
             for (int i = 0; i < gameOverButtonsBounds.size(); i++) {
                 if (gameOverButtonsBounds.get(i).contains(logicalMouseX, logicalMouseY)) {
-                    if (i == 0) { // "Try Again"
+                    if (i == 0) {
                         startGame(mainFrame.getLastPlayedLevelIndex());
-                    } else { // "Main Menu"
+                    } else {
                         showMainMenu();
                     }
-                    return; // Event verarbeitet
+                    return;
                 }
             }
         }
     }
 
-    // --- NEU: Maus-Bewegungs-Behandlung für Button-Hervorhebung ---
     private void handleMouseMoveInState(int mouseX, int mouseY) {
-        // Skaliere die Mauskoordinaten zurück auf die logische Spielauflösung
+
         double scaleX = (double) LOGICAL_WIDTH / getWidth();
         double scaleY = (double) LOGICAL_HEIGHT / getHeight();
         int logicalMouseX = (int)(mouseX * scaleX);
@@ -170,7 +156,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
         if (currentState == GameState.MAIN_MENU) {
             int oldSelected = selectedMenuLevelIndex;
-            selectedMenuLevelIndex = -1; // Standard: nichts ausgewählt
+            selectedMenuLevelIndex = -1;
 
             for (int i = 0; i < menuButtonsBounds.size(); i++) {
                 if (menuButtonsBounds.get(i).contains(logicalMouseX, logicalMouseY)) {
@@ -179,50 +165,47 @@ public class GamePanel extends JPanel implements ActionListener {
                 }
             }
             if (oldSelected != selectedMenuLevelIndex) {
-                repaint(); // Nur neu zeichnen, wenn sich die Auswahl geändert hat
+                repaint();
             }
         }
-        // Für Game Over Buttons brauchen wir keine Maus-Hervorhebung per Mausbewegung,
-        // da sie per ENTER/ESC bedient werden.
+
     }
 
-
-    // --- Eingabebehandlung basierend auf dem Spielzustand ---
     private void handleInputInState(int keyCode) {
         if (currentState == GameState.MAIN_MENU) {
             switch (keyCode) {
                 case KeyEvent.VK_UP:
                     selectedMenuLevelIndex = Math.max(0, selectedMenuLevelIndex - 1);
-                    repaint(); // Neu zeichnen für Hervorhebung
+                    repaint();
                     break;
                 case KeyEvent.VK_DOWN:
-                    selectedMenuLevelIndex = Math.min(availableLevels.size(), selectedMenuLevelIndex + 1); // +1 für Exit-Button
-                    repaint(); // Neu zeichnen für Hervorhebung
+                    selectedMenuLevelIndex = Math.min(availableLevels.size(), selectedMenuLevelIndex + 1);
+                    repaint();
                     break;
                 case KeyEvent.VK_ENTER:
                     if (selectedMenuLevelIndex < availableLevels.size()) {
-                        startGame(selectedMenuLevelIndex); // Level starten
+                        startGame(selectedMenuLevelIndex);
                     } else if (selectedMenuLevelIndex == availableLevels.size()) {
-                        System.exit(0); // Spiel beenden
+                        System.exit(0);
                     }
                     break;
             }
         } else if (currentState == GameState.GAME_OVER) {
             switch (keyCode) {
                 case KeyEvent.VK_ENTER:
-                    startGame(mainFrame.getLastPlayedLevelIndex()); // Letztes Level neu starten
+                    startGame(mainFrame.getLastPlayedLevelIndex());
                     break;
                 case KeyEvent.VK_ESCAPE:
-                    showMainMenu(); // Zum Hauptmenü zurück
+                    showMainMenu();
                     break;
             }
         } else if (currentState == GameState.GAME_RUNNING) {
-            // ESC-Taste kehrt aus dem Vollbild in den Fenstermodus zurück, sonst zum Menü
+
             if (keyCode == KeyEvent.VK_ESCAPE) {
                 if (mainFrame.isFullscreen()) {
                     mainFrame.exitFullscreenAndContinueGame();
                 } else {
-                    showMainMenu(); // Bereits im Fenstermodus, gehe zum Menü
+                    showMainMenu();
                 }
             }
         }
@@ -240,21 +223,20 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
 
-    // --- Methoden zum Ändern des Spielzustands ---
     public void showMainMenu() {
         currentState = GameState.MAIN_MENU;
         stopGameTimer();
-        selectedMenuLevelIndex = 0; // Standardauswahl
+        selectedMenuLevelIndex = 0;
         repaint();
     }
 
     public void startGame(int levelIndex) {
         this.currentLevel = availableLevels.get(levelIndex);
         currentState = GameState.GAME_RUNNING;
-        mainFrame.setLastPlayedLevelIndex(levelIndex); // Setze das zuletzt gespielte Level im MainFrame
-        setupGame(); // Spiel neu initialisieren
+        mainFrame.setLastPlayedLevelIndex(levelIndex);
+        setupGame();
         startGameTimer();
-        requestFocusInWindow(); // Fokus wiederherstellen
+        requestFocusInWindow();
         repaint();
     }
 
@@ -264,20 +246,16 @@ public class GamePanel extends JPanel implements ActionListener {
         repaint();
     }
 
-
-    // Initialisiert oder setzt das Spiel zurück
     private void setupGame() {
-        // Welt immer neu erstellen, um alte Bodies/Joints zu löschen
+
         world = new World(GRAVITY);
         world.setContactListener(new MyContactListener(this));
 
-        cleanupPhysicsObjects(); // Entfernt alle alten physikalischen Objekte aus der *bestehenden* Welt
+        cleanupPhysicsObjects();
 
-        // collectibles ist bereits im Konstruktor initialisiert, muss nur geleert werden
         collectibles.clear();
 
-
-        generateTerrain(); // Terrain generieren (mit Level-spezifischen Parametern)
+        generateTerrain();
 
         float initialCarX = (float) (LOGICAL_WIDTH * currentLevel.initialCarXFactor / PIXELS_PER_METER);
 
@@ -306,7 +284,6 @@ public class GamePanel extends JPanel implements ActionListener {
         upsideDownTimer = 0.0f;
     }
 
-    // Hilfsmethode, um alle JBox2D-Objekte aus der Welt zu entfernen
     private void cleanupPhysicsObjects() {
         List<Body> bodiesToDestroy = new ArrayList<>();
         for (Body b = world.getBodyList(); b != null; b = b.getNext()) {
@@ -329,7 +306,6 @@ public class GamePanel extends JPanel implements ActionListener {
         collectibles.clear();
     }
 
-    // Generiert das Terrain für das aktuelle Level
     private void generateTerrain() {
         terrainPointsPixels = new double[LOGICAL_WIDTH * TERRAIN_WIDTH_FACTOR];
         random = new Random(currentLevel.seed);
@@ -416,7 +392,6 @@ public class GamePanel extends JPanel implements ActionListener {
             }
         }
     }
-
 
     private float toJBox2dY(double swingY, int screenHeight) {
         return (float) ((screenHeight - swingY) / PIXELS_PER_METER);
@@ -506,15 +481,12 @@ public class GamePanel extends JPanel implements ActionListener {
         double scaleY = (double) getHeight() / LOGICAL_HEIGHT;
         g2d.scale(scaleX, scaleY);
 
-
         Color skyBlueLight = new Color(135, 206, 250);
         Color skyBlueDark = new Color(70, 130, 180);
         GradientPaint skyGradient = new GradientPaint(0, 0, skyBlueLight, 0, LOGICAL_HEIGHT, skyBlueDark);
         g2d.setPaint(skyGradient);
         g2d.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
 
-        // --- Terrain zeichnen ---
-        // KORRIGIERT: Nur zeichnen, wenn terrainPointsPixels nicht null ist
         if (terrainPointsPixels != null) {
             Color terrainTop = new Color(34, 139, 34);
             Color terrainBottom = new Color(139, 69, 19);
@@ -541,25 +513,21 @@ public class GamePanel extends JPanel implements ActionListener {
             g2d.draw(polygon);
         }
 
-        // --- Auto zeichnen ---
-        if (car != null) { // Nur zeichnen, wenn das Auto existiert
+        if (car != null) {
             Graphics2D carG2d = (Graphics2D) g2d.create();
             carG2d.translate(-cameraOffsetX, 0.0);
             car.draw(carG2d, LOGICAL_HEIGHT);
             carG2d.dispose();
         }
 
-        // --- Collectibles zeichnen ---
-        // KORRIGIERT: Nur zeichnen, wenn collectibles nicht null ist (was es jetzt immer sein sollte, aber zur Sicherheit)
         if (collectibles != null) {
             for (Collectible c : collectibles) {
                 c.draw(g2d, LOGICAL_HEIGHT, cameraOffsetX);
             }
         }
 
-        drawHUD(g2d); // HUD zeichnen
+        drawHUD(g2d);
 
-        // --- Overlays für Menü / Game Over zeichnen ---
         if (currentState == GameState.MAIN_MENU) {
             drawMainMenuOverlay(g2d);
         } else if (currentState == GameState.GAME_OVER) {
@@ -609,8 +577,8 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void drawMainMenuOverlay(Graphics2D g2d) {
-        // --- KORRIGIERT: menuButtonsBounds vor dem Zeichnen leeren und neu füllen ---
-        menuButtonsBounds.clear(); // Vor jedem Neuzeichnen leeren
+
+        menuButtonsBounds.clear();
 
         g2d.setColor(new Color(0, 0, 0, 180));
         g2d.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
@@ -627,10 +595,10 @@ public class GamePanel extends JPanel implements ActionListener {
         int buttonY = LOGICAL_HEIGHT / 2 - availableLevels.size() * 30 / 2;
         for (int i = 0; i < availableLevels.size(); i++) {
             String levelText = "Level " + (i + 1) + ": " + availableLevels.get(i).name;
-            menuButtonsBounds.add(drawMenuButton(g2d, levelText, i, buttonY + i * 50)); // *** KORRIGIERT: Button-Bounds speichern ***
+            menuButtonsBounds.add(drawMenuButton(g2d, levelText, i, buttonY + i * 50));
         }
 
-        menuButtonsBounds.add(drawMenuButton(g2d, "Exit Game", availableLevels.size(), buttonY + availableLevels.size() * 50)); // *** KORRIGIERT ***
+        menuButtonsBounds.add(drawMenuButton(g2d, "Exit Game", availableLevels.size(), buttonY + availableLevels.size() * 50));
     }
 
     private Rectangle drawMenuButton(Graphics2D g2d, String text, int index, int y) {
@@ -641,7 +609,7 @@ public class GamePanel extends JPanel implements ActionListener {
         int buttonWidth = textWidth + 60;
         int buttonHeight = textHeight + 20;
         int buttonX = (LOGICAL_WIDTH - buttonWidth) / 2;
-        Rectangle bounds = new Rectangle(buttonX, y - buttonHeight / 2, buttonWidth, buttonHeight); // Bounds erstellen
+        Rectangle bounds = new Rectangle(buttonX, y - buttonHeight / 2, buttonWidth, buttonHeight);
 
         if (index == selectedMenuLevelIndex) {
             g2d.setColor(new Color(60, 179, 113).brighter());
@@ -654,13 +622,12 @@ public class GamePanel extends JPanel implements ActionListener {
         g2d.drawRoundRect(buttonX, y - buttonHeight / 2, buttonWidth, buttonHeight, 20, 20);
         g2d.drawString(text, buttonX + (buttonWidth - textWidth) / 2, y + textHeight / 4);
 
-        return bounds; // *** Bounds zurückgeben ***
+        return bounds;
     }
 
-
     private void drawGameOverOverlay(Graphics2D g2d) {
-        // --- KORRIGIERT: gameOverButtonsBounds vor dem Zeichnen leeren und neu füllen ---
-        gameOverButtonsBounds.clear(); // Vor jedem Neuzeichnen leeren
+
+        gameOverButtonsBounds.clear();
 
         g2d.setColor(new Color(0, 0, 0, 200));
         g2d.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
@@ -674,8 +641,8 @@ public class GamePanel extends JPanel implements ActionListener {
         g2d.drawString(gameOverText, titleX, titleY);
 
         g2d.setFont(new Font("Arial", Font.BOLD, 30));
-        gameOverButtonsBounds.add(drawGameOverButton(g2d, "Try Again (ENTER)", 0, LOGICAL_HEIGHT / 2)); // *** KORRIGIERT ***
-        gameOverButtonsBounds.add(drawGameOverButton(g2d, "Main Menu (ESC)", 1, LOGICAL_HEIGHT / 2 + 60)); // *** KORRIGIERT ***
+        gameOverButtonsBounds.add(drawGameOverButton(g2d, "Try Again (ENTER)", 0, LOGICAL_HEIGHT / 2));
+        gameOverButtonsBounds.add(drawGameOverButton(g2d, "Main Menu (ESC)", 1, LOGICAL_HEIGHT / 2 + 60));
     }
 
     private Rectangle drawGameOverButton(Graphics2D g2d, String text, int index, int y) {
@@ -686,7 +653,7 @@ public class GamePanel extends JPanel implements ActionListener {
         int buttonWidth = textWidth + 60;
         int buttonHeight = textHeight + 20;
         int buttonX = (LOGICAL_WIDTH - buttonWidth) / 2;
-        Rectangle bounds = new Rectangle(buttonX, y - buttonHeight / 2, buttonWidth, buttonHeight); // Bounds erstellen
+        Rectangle bounds = new Rectangle(buttonX, y - buttonHeight / 2, buttonWidth, buttonHeight);
 
         g2d.setColor(new Color(30, 144, 255));
         if (index == 1) g2d.setColor(new Color(100, 149, 237));
@@ -697,6 +664,6 @@ public class GamePanel extends JPanel implements ActionListener {
         g2d.drawRoundRect(buttonX, y - buttonHeight / 2, buttonWidth, buttonHeight, 20, 20);
         g2d.drawString(text, buttonX + (buttonWidth - textWidth) / 2, y + textHeight / 4);
 
-        return bounds; // *** Bounds zurückgeben ***
+        return bounds;
     }
 }
