@@ -21,4 +21,4 @@ Work in progress – not a full game yet, just a playground to test and learn.
 
 ## License
 
-This project is under the MIT License (or whatever license you choose).
+This project is under the Apache 2.0 License
