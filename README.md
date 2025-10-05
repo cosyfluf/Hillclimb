@@ -8,7 +8,6 @@ It’s mainly for learning purposes and experimenting with libraries like **LWJG
 * 2D physics-based vehicle movement
 * Simple terrain generation
 * Basic controls for acceleration and braking
-* Fun ragdoll-like physics for the car
 
 ## Tech Stack
 
